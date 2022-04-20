@@ -56,18 +56,43 @@ class Perceptron(Learner):
     def __init__(self):
         # Initialize weights to random values between 0 and 1
         seed(1)
-        self._w = np.zeros(23)
-        for i in range(23):
+        self._w = np.zeros(123)
+        for i in range(123):
             self._w[i] = -1 + (random() * 2)
+        self._eta = 0.05  # Learning rate (hyperparameter)
 
-    def perceptron(self, sample):
+    def perceptron(self, recoded):
         threshold = self._w[0]
-        for i in range(22):
-            threshold += self._w[i+1] *
+        for i in range(122):
+            threshold += self._w[i+1] * recoded[i+1]
+        if threshold > 0:
+            return 1
+        else:
+            return -1
 
     def train(self, example):
+        recoded = recode(example)
+        o = self.perceptron(recoded)
+        match example[0]:
+            case 'p':
+                t = -1
+            case _:
+                t = 1
+        if o != t:
+            # Incorrect label. Adjust weights.
+            self._w[0] += self._eta * (t - o)
+            for i in range(122):
+                self._w[i+1] += self._eta * (t - o) * recoded[i+1]
 
-
+    def test(self, sample):
+        recoded = recode(sample)
+        o = self.perceptron(recoded)
+        match sample[0]:
+            case 'p':
+                t = -1
+            case _:
+                t = 1
+        return o == t
 
 class LogisticRegression(Learner):
     pass  # TODO: fill
@@ -100,3 +125,4 @@ def recode(example):
             recoded[6] = 1
     match example[2]:
         # TODO: etc
+    return recoded
