@@ -1,6 +1,7 @@
 import numpy as np
 from random import seed, random
 
+
 class Learner:
     def train(self, example: list):
         pass
@@ -27,7 +28,7 @@ class NaiveBayes(Learner):
 
     def test(self, sample):
         # Calculate comparison value for "poisonous" label
-        p_value = np.log(self._p_count / self._i)
+        p_value = np.log(self._p_count / self._i + 0.0001)
         for i in range(22):
             n_c = 0  # Counts instances where label and attribute match
             for j in range(self._i):
@@ -35,7 +36,7 @@ class NaiveBayes(Learner):
                 n_c += ((sample[i+1] == self._data[j][i+1]) & (sample[0] == 'p'))
             p_value += np.log((n_c + self._m * self._p) / (self._p_count + self._m))
         # Calculate comparison value for "edible" label
-        e_value = np.log(self._e_count / self._i)
+        e_value = np.log(self._e_count / self._i + 0.0001)
         for i in range(22):
             n_c = 0  # Counts instances where label and attribute match
             for j in range(self._i):
@@ -47,9 +48,6 @@ class NaiveBayes(Learner):
         else:
             label = 'p'
         return int(label == sample[0])  # Returns 1 if label correct, 0 if incorrect
-
-
-
 
 
 class Perceptron(Learner):
@@ -83,6 +81,8 @@ class Perceptron(Learner):
             self._w[0] += self._eta * (t - o)
             for i in range(122):
                 self._w[i+1] += self._eta * (t - o) * recoded[i+1]
+            return 0
+        return 1
 
     def test(self, sample):
         recoded = recode(sample)
@@ -94,12 +94,14 @@ class Perceptron(Learner):
                 t = 1
         return o == t
 
+
 class LogisticRegression(Learner):
     pass  # TODO: fill
 
 
 class DecisionTree(Learner):
     pass  # TODO: fill
+
 
 # Recodes categorical values into dummy values to be used in regression.
 # Details are not necessarily important to understand.
@@ -125,7 +127,6 @@ def recode(example):
             recoded[6] = 1
     # Cap surface
     match example[2]:
-        # TODO: etc
         case 'f':
             recoded[7] = 1
         case 'g':
@@ -161,41 +162,41 @@ def recode(example):
         recoded[21] = 1
     # odor
     match example[5]:
-        case'a':
+        case 'a':
             recoded[22] = 1
-        case'l':
+        case 'l':
             recoded[23] = 1
-        case'c':
+        case 'c':
             recoded[24] = 1
-        case'y':
+        case 'y':
             recoded[25] = 1
-        case'f':
+        case 'f':
             recoded[26] = 1
-        case'm':
+        case 'm':
             recoded[27] = 1
-        case'n':
+        case 'n':
             recoded[28] = 1
-        case'p':
+        case 'p':
             recoded[29] = 1
-        case's':
+        case 's':
             recoded[30] = 1
     # gill-attachment
     match example[6]:
-        case'a':
+        case 'a':
             recoded[31] = 1
-        case'd':
+        case 'd':
             recoded[32] = 1
-        case'f':
+        case 'f':
             recoded[33] = 1
-        case'n':
+        case 'n':
             recoded[34] = 1
     # gill spacing
     match example[7]:
-        case'c':
+        case 'c':
             recoded[35] = 1
-        case'w':
+        case 'w':
             recoded[36] = 1
-        case'd':
+        case 'd':
             recoded[37] = 1
     # for gill size just need an if for the T or F statement
     if example[8] == 'n':
@@ -229,172 +230,168 @@ def recode(example):
     # stalk shape
     if example[10] == 't':
         recoded[51] = 1
-
     # stalk root
     match example[11]:
-        case'b':
-            recoded[51] = 1
-        case'c':
+        case 'b':
             recoded[52] = 1
-        case'u':
+        case 'c':
             recoded[53] = 1
-        case'e':
+        case 'u':
             recoded[54] = 1
-        case'z':
+        case 'e':
             recoded[55] = 1
-        case'r':
+        case 'z':
             recoded[56] = 1
+        case 'r':
+            recoded[57] = 1
         # SKIP MISSING VALUE FOR NOW
     # stalk surface above
     match example[12]:
-        case'f':
-            recoded[58] = 1
-        case'y':
+        case 'f':
             recoded[59] = 1
-        case'k':
+        case 'y':
             recoded[60] = 1
-        case's':
+        case 'k':
             recoded[61] = 1
+        case 's':
+            recoded[62] = 1
     # stalk surface below
     match example[13]:
-        case'f':
-            recoded[62] = 1
-        case'y':
+        case 'f':
             recoded[63] = 1
-        case'k':
+        case 'y':
             recoded[64] = 1
-        case's':
+        case 'k':
             recoded[65] = 1
+        case 's':
+            recoded[66] = 1
     # stalk color above
     match example[14]:
-        case'n':
-            recoded[66] = 1
-        case'b':
+        case 'n':
             recoded[67] = 1
-        case'c':
+        case 'b':
             recoded[68] = 1
-        case'g':
+        case 'c':
             recoded[69] = 1
-        case'o':
+        case 'g':
             recoded[70] = 1
-        case'p':
+        case 'o':
             recoded[71] = 1
-        case'e':
+        case 'p':
             recoded[72] = 1
-        case'w':
+        case 'e':
             recoded[73] = 1
-        case'y':
+        case 'w':
             recoded[74] = 1
+        case 'y':
+            recoded[75] = 1
     # stalk color below
     match example[15]:
-        case'n':
-            recoded[75] = 1
-        case'b':
+        case 'n':
             recoded[76] = 1
-        case'c':
+        case 'b':
             recoded[77] = 1
-        case'g':
+        case 'c':
             recoded[78] = 1
-        case'o':
+        case 'g':
             recoded[79] = 1
-        case'p':
+        case 'o':
             recoded[80] = 1
-        case'e':
+        case 'p':
             recoded[81] = 1
-        case'w':
+        case 'e':
             recoded[82] = 1
-        case'y':
+        case 'w':
             recoded[83] = 1
+        case 'y':
+            recoded[84] = 1
     # veil type
     if example[16] == 'u':
-        recoded[84] = 1
-
+        recoded[85] = 1
     # veil color
     match example[17]:
-        case'n':
-            recoded[85] = 1
-        case'o':
+        case 'n':
             recoded[86] = 1
-        case'w':
+        case 'o':
             recoded[87] = 1
-        case'y':
+        case 'w':
             recoded[88] = 1
+        case 'y':
+            recoded[89] = 1
     # ring number
     match example[18]:
-        case'n':
-            recoded[89] = 1
-        case'o':
+        case 'n':
             recoded[90] = 1
-        case't':
+        case 'o':
             recoded[91] = 1
+        case 't':
+            recoded[92] = 1
     # ring type
     match example[19]:
-        case'c':
-            recoded[92] = 1
-        case'e':
+        case 'c':
             recoded[93] = 1
-        case'f':
+        case 'e':
             recoded[94] = 1
-        case'l':
+        case 'f':
             recoded[95] = 1
-        case'n':
+        case 'l':
             recoded[96] = 1
-        case'p':
+        case 'n':
             recoded[97] = 1
-        case's':
+        case 'p':
             recoded[98] = 1
-        case'z':
+        case 's':
             recoded[99] = 1
-
+        case 'z':
+            recoded[100] = 1
     # spore print color
     match example[20]:
-        case'k':
-            recoded[100] = 1
-        case'n':
+        case 'k':
             recoded[101] = 1
-        case'b':
+        case 'n':
             recoded[102] = 1
-        case'h':
+        case 'b':
             recoded[103] = 1
-        case'r':
+        case 'h':
             recoded[104] = 1
-        case'o':
+        case 'r':
             recoded[105] = 1
-        case'u':
+        case 'o':
             recoded[106] = 1
-        case'w':
+        case 'u':
             recoded[107] = 1
-        case'y':
+        case 'w':
             recoded[108] = 1
-
+        case 'y':
+            recoded[109] = 1
     # population
     match example[21]:
-        case'a':
-            recoded[109] = 1
-        case'c':
+        case 'a':
             recoded[110] = 1
-        case'n':
+        case 'c':
             recoded[111] = 1
-        case's':
+        case 'n':
             recoded[112] = 1
-        case'v':
+        case 's':
             recoded[113] = 1
-        case'y':
+        case 'v':
             recoded[114] = 1
+        case 'y':
+            recoded[115] = 1
     # habitat
     match example[22]:
-        case'g':
-            recoded[115] = 1
-        case'l':
+        case 'g':
             recoded[116] = 1
-        case'm':
+        case 'l':
             recoded[117] = 1
-        case'p':
+        case 'm':
             recoded[118] = 1
-        case'u':
+        case 'p':
             recoded[119] = 1
-        case'w':
+        case 'u':
             recoded[120] = 1
-        case'd':
+        case 'w':
             recoded[121] = 1
+        case 'd':
+            recoded[122] = 1
     return recoded
