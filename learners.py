@@ -1,5 +1,6 @@
 import numpy as np
 from random import seed, random
+import math
 
 
 class Learner:
@@ -96,7 +97,55 @@ class Perceptron(Learner):
 
 
 class LogisticRegression(Learner):
-    pass  # TODO: fill
+    def __init__(self):
+        # Initialize weights to random values between 0 and 1
+        seed(1)
+        self._w = np.zeros(123)
+        for i in range(123):
+            self._w[i] = -1 + (random() * 2)
+        #p = 51.8 / 48.2
+        #self._w[0] = np.log(p / (1-p))
+        self._eta = 0.00005  # Learning rate (hyperparameter)
+        self._gradient = np.zeros(123)
+        self._m = 0
+
+    def train(self, example):
+        # For diagnostic ease
+        success = self.test(example)
+
+        recoded = recode(example)
+        # Standardize gradient so that it can be added to stochastically
+        for i in range(123):
+            self._gradient[i] *= -1 * self._m
+            xi = recoded[i]
+            if i == 0:
+                xi = 1  # For first weight convenience
+            self._gradient[i] += (recoded[0] * xi) / (1 + math.exp(recoded[0] * self._w[i] * xi))
+            self._m += 1
+            self._gradient[i] *= -1 / self._m
+        # Update the weights
+        max_weight_change = 0  # For stopping condition
+        for i in range(123):
+            weight_change = -1 * self._eta * self._gradient[i]
+            if abs(weight_change) > max_weight_change:
+                max_weight_change = abs(weight_change)
+            self._w[i] += weight_change
+        # Returns 0 or 1 to continue based on stopping conditions
+        # return int((max_weight_change < 10**-6) | (self._m > 10000))
+        # Returns success
+        self._eta = 0.5 / self._m
+        return success
+
+    def test(self, sample):
+        # Classifies sample based on probability (sigmoid)
+        recoded = recode(sample)
+        sigmoid = self._w[0]
+        for i in range(122):
+            sigmoid += self._w[i+1] * recoded[i+1]
+        threshold = 0.5
+        sigmoid = 1 / (1 + math.exp(sigmoid))
+        # print("True label is " + sample[0] + ". Sigmoid assigned probability of " + str(sigmoid) + ".")
+        return int(sigmoid > threshold) == recoded[0]
 
 
 class DecisionTree(Learner):

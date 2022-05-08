@@ -21,25 +21,24 @@ if __name__ == "__main__":
     p_successes = 0
     p_success_rate = []
     nb_success_rate = []
+    lr_successes = 0
+    lr_success_rate = []
 
     # Graphing variables
     fig = plt.figure()
-    plt.title("Perceptron Success Rate")
+    plt.title("Logistic Regression Success Rate")
     plt.xlabel("Training Examples")
     plt.ylabel("Success Rate over Test Set")
-    plt.xlim([1, num_instances])
+    # plt.xlim([1, num_instances])
     plt.ylim([0, 1.1])
 
     # Train learners
-    for i in range(num_train):
-        example = data[i]
-        Perceptron.train(p, example)
-        for j in range(num_test):
-            sample = data[num_train + j]
-            # nb_successes += NaiveBayes.test(nb, sample)
-            p_successes += Perceptron.test(p, sample)
-        # p_successes += Perceptron.train(p, example)
-        p_success_rate.append(float(p_successes / num_test / (i + 1)))
+    # loop = True
+    # i = 0
+    for i in range(num_instances):
+        example = data[i % num_train]
+        lr_successes += LogisticRegression.train(lr, example)
+        lr_success_rate.append(float(lr_successes / (i + 1)))
         examples.append(i + 1)
         print(i)
         '''
@@ -71,5 +70,6 @@ if __name__ == "__main__":
     print("Perceptron Accuracy: " + str(p_successes / num_test))
     '''
 
-    plt.plot(examples, p_success_rate)
+    plt.xlim([1, num_instances])  # Only for logistic regression, because of stopping conditions
+    plt.plot(examples, lr_success_rate)
     plt.show()
