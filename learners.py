@@ -3,6 +3,7 @@ from random import seed, random
 import math
 
 
+# Various print() statements are present in this code. Uncomment to see progress for diagnostic purposes.
 class Learner:
     def train(self, example: list):
         pass
@@ -21,11 +22,15 @@ class NaiveBayes(Learner):
         self._p = 1 / 22    # Prior estimate of probability
 
     def train(self, example):
+        success = 0
+        if self._i != 0:
+            success = self.test(example)
         for i in range(len(example)):
             self._data[self._i][i] = example[i]
         self._p_count += (example[0] == 'p')  # Increment poisonous counter
         self._e_count += (example[0] == 'e')  # Increment edible counter
         self._i += 1    # Increment general counter
+        return success
 
     def test(self, sample):
         # Calculate comparison value for "poisonous" label
@@ -103,9 +108,9 @@ class LogisticRegression(Learner):
         self._w = np.zeros(123)
         for i in range(123):
             self._w[i] = -1 + (random() * 2)
-        #p = 51.8 / 48.2
-        #self._w[0] = np.log(p / (1-p))
-        self._eta = 0.00005  # Learning rate (hyperparameter)
+        # p = 51.8 / 48.2 # Alternate ideas for starting weights, scrapped
+        # self._w[0] = np.log(p / (1-p))
+        self._eta = 0.2  # Learning rate (hyperparameter)
         self._gradient = np.zeros(123)
         self._m = 0
 
@@ -114,13 +119,20 @@ class LogisticRegression(Learner):
         success = self.test(example)
 
         recoded = recode(example)
+
+        w_xi = self._w[0]
+        for i in range(122):
+            w_xi += self._w[i+1] * recoded[i+1]
         # Standardize gradient so that it can be added to stochastically
         for i in range(123):
             self._gradient[i] *= -1 * self._m
             xi = recoded[i]
             if i == 0:
                 xi = 1  # For first weight convenience
-            self._gradient[i] += (recoded[0] * xi) / (1 + math.exp(recoded[0] * self._w[i] * xi))
+            yi = recoded[0]
+            if yi == 0:
+                yi = -1  # Calculation only works if values are -1 and 1
+            self._gradient[i] += (yi * xi) / (1 + math.exp(yi * w_xi))
             self._m += 1
             self._gradient[i] *= -1 / self._m
         # Update the weights
@@ -133,7 +145,6 @@ class LogisticRegression(Learner):
         # Returns 0 or 1 to continue based on stopping conditions
         # return int((max_weight_change < 10**-6) | (self._m > 10000))
         # Returns success
-        self._eta = 0.5 / self._m
         return success
 
     def test(self, sample):
@@ -149,7 +160,184 @@ class LogisticRegression(Learner):
 
 
 class DecisionTree(Learner):
-    pass  # TODO: fill
+    def __init__(self):
+        self._data = np.empty((6193, 123))  # Stores training data
+        self._i = 0  # Counter to store data correctly
+        self._root = Node("-")  # This will be overwritten by the first example trained
+
+    def train(self, example):
+        # print("Training decision tree...")
+        # Diagnostic: test training example
+        correct = self.test(example)
+        # Read in training example, recoded
+        # Recoding would not be necessary for many-branched trees, but this implementation will be a binary tree
+        self._data[self._i] = recode(example)
+        self._i += 1
+        # Construct tree
+        # print("Constructing tree.")
+        indices = np.zeros(123)
+        for i in range(123):  # Generates an array of indices to label nodes
+            indices[i] = int(i)
+        # print("Time to create a tree!")
+        self._root = id3(self._data, self._i, indices, 0)
+        return correct
+
+    def test(self, sample):
+        # print("Testing sample...")
+        recoded = recode(sample)
+        check = self._root
+        hypothesis = 0  # Will never be returned, but makes the IDE happy
+        while not (str(check.data) == "-" or str(check.data) == "+"):
+            attribute = int(check.data)
+            # print("Decision attribute: " + str(attribute))
+            if recoded[attribute] == 0:
+                check = check.left
+                # print("This attribute is 0. Proceed down the left branch.")
+            else:
+                check = check.right
+                # print("This attribute is 1. Proceed down the right branch.")
+        if str(check.data) == "-":
+            hypothesis = 0
+            # print("We will hypothesize that this sample is poisonous. True label: " + sample[0])
+        if str(check.data) == "+":
+            hypothesis = 1
+            # print("We will hypothesize that this sample is edible. True label: " + sample[0])
+        # print("Test complete. Decision tree said it was " + str(hypothesis) + " and it was actually "
+        #       + str(recoded[0]) + ".")
+        return int(hypothesis == recoded[0])
+
+    def print(self):
+        self._root.print_tree()
+
+
+# Function that takes data and returns a decision tree
+def id3(data, size, indices, depth):
+    # Check for all-positive or all-negative data
+    p_total = 0
+    e_total = 0
+    # print("Checking through all " + str(size) + " stored training examples!")
+    for i in range(size):
+        if data[i][0] == 0:
+            p_total += 1
+        else:
+            e_total += 1
+    if e_total == 0:
+        # print("All examples on this branch are poisonous.")
+        return Node("-")
+    if p_total == 0:
+        # print("All examples on this branch are edible.")
+        return Node("+")
+    attributes = len(data[0]) - 1  # Attributes that are not the target
+    # print("Checking " + str(attributes) + " attributes.")
+    # Check for attributes empty, AND make sure the tree isn't getting too complex.
+    if attributes == 0 or depth == 6:
+        # Return a node with the most common label
+        if p_total > e_total:
+            # print("Most examples I see are poisonous.")
+            return Node("-")
+        else:
+            # print("Most examples I see are edible.")
+            return Node("+")
+    max_info_gain = -65535  # Keeps track of highest information gain
+    max_info_gain_index = 0  # Keeps track of the index with the highest information gain
+    for i in range(attributes):
+        # print("In the attribute loop, index " + str(i))
+        p_left = 0  # Num examples with poisonous label and 0 for the relevant attribute
+        p_right = 0  # Num examples with poisonous label and 1 for the relevant attribute
+        e_left = 0  # Num examples with edible label and 0 for the relevant attribute
+        e_right = 0  # Num examples with edible label and 1 for the relevant attribute
+        # Increment these values for entropy calculation
+        for j in range(size):
+            if data[j][i+1] == 0:
+                if data[j][0] == 0:
+                    p_left += 1
+                else:
+                    e_left += 1
+            else:  # 1
+                if data[j][0] == 0:
+                    p_right += 1
+                else:
+                    e_right += 1
+        # Calculate entropy of the full set
+        # First check for p_i == 0, to avoid log errors
+        if p_left + p_right == 0:
+            p_log_p = 0
+        else:
+            p_log_p = (p_left + p_right) / size * math.log((p_left + p_right) / size, 2)
+        if e_left + e_right == 0:
+            e_log_e = 0
+        else:
+            e_log_e = (e_left + e_right) / size * math.log((e_left + e_right) / size, 2)
+        entropy = -1 * p_log_p - e_log_e
+        # Calculate entropies of new branches
+        # First check for p_i == 0, to avoid log errors
+        if p_left == 0:
+            p_log_p = 0
+        else:
+            p_log_p = p_left / (p_left + e_left) * math.log(p_left / (p_left + e_left), 2)
+        if e_left == 0:
+            e_log_e = 0
+        else:
+            e_log_e = e_left / (p_left + e_left) * math.log(e_left / (p_left + e_left), 2)
+        entropy_left = -1 * p_log_p - e_log_e
+        if p_right == 0:
+            p_log_p = 0
+        else:
+            p_log_p = p_right / (p_right + e_right) * math.log(p_right / (p_right + e_right), 2)
+        if e_right == 0:
+            e_log_e = 0
+        else:
+            e_log_e = e_right / (p_right + e_right) * math.log(e_right / (p_right + e_right), 2)
+        entropy_right = -1 * p_log_p - e_log_e
+        info_gain = entropy - (p_left + e_left) / size * entropy_left - \
+            (p_right + e_right) / size * entropy_right
+        if info_gain > max_info_gain:
+            # print("This attribute (" + str(i+1) + ") works better. We'll use it.")
+            max_info_gain_index = i + 1
+            max_info_gain = info_gain
+    # Set root node to the attribute that best classifies examples
+    root = Node(indices[max_info_gain_index])
+    # print("Attribute selected to be a node: " + str(indices[max_info_gain_index]))
+    # Divide data into left and right branches
+    data_left = np.copy(data)
+    size_left = size
+    size_right = size
+    for i in range(size):  # Delete rows
+        if data_left[i][max_info_gain_index] == 1:
+            data_left = np.delete(data_left, obj=i, axis=0)
+            i -= 1  # Set index back one (i won't change next iteration, since we deleted a row)
+            size_left -= 1
+    data_left = np.delete(data_left, obj=max_info_gain_index, axis=1)  # Delete relevant column
+    data_right = np.copy(data)
+    for i in range(size):  # Delete rows
+        if data_right[i][max_info_gain_index] == 0:
+            data_right = np.delete(data_right, obj=i, axis=0)
+            i -= 1  # Set index back one (i won't change next iteration, since we deleted a row)
+            size_right -= 1
+    data_right = np.delete(data_right, obj=max_info_gain_index, axis=1)  # Delete relevant column
+    indices = np.delete(indices, obj=max_info_gain_index)
+    # Recursively create left and right branches
+    root.left = id3(data_left, size_left, indices, depth + 1)
+    root.right = id3(data_right, size_right, indices, depth + 1)
+    # Return the root node
+    return root
+
+
+# Used in the construction of decision trees
+class Node:
+    def __init__(self, data):
+        self.left = None
+        self.right = None
+        self.data = data
+
+    def print_tree(self):
+        print("Node data: " + str(self.data))
+        if self.left is not None:
+            print("Left child: ")
+            self.left.print_tree()
+        if self.right is not None:
+            print("Right child: ")
+            self.right.print_tree()
 
 
 # Recodes categorical values into dummy values to be used in regression.
